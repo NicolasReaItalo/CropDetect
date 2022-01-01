@@ -3,7 +3,7 @@ import subprocess as sp
 import numpy
 import time
 
-import timecode
+from package import timecode
 
 from ffprobe import FFProbe
 
@@ -13,12 +13,34 @@ import datetime
 import pandas as pd
 
 
-class VideoCheck():
+def is_video(file):
+    """Check if the file referenced is a valid video codec
+    :param file : string path to a video file
+    """
+    if os.path.exists(file):
+        metadata = FFProbe(file)
+        if len(metadata.streams) > 0:
+            if metadata.streams[0].is_video():
+                return True
+    return False
+
+
+
+class JobDir():
+    def __init__(self):
+        self.job_type = "Dir"
+        self.dir_path = ""
+
+
+
+
+
+class Job_File():
 
     def __init__(self):
-        self.debug = True
+        self.job_type = "File"
         self.video_path = ''
-        self.report_path = ''
+        self.report_path = '.'
         self.framerate = 0
         self.codec = ''
         self.x_res = 0
@@ -303,9 +325,9 @@ class VideoCheck():
 
 
 if __name__ == '__main__':
-    projet = VideoCheck()
+    projet = Job_File()
     path = "test_divers.mov"
-    projet.report_path = "."
+    projet.report_path = ".."
     projet.load_video_file(path)
     projet.analyse_video()
     projet.generate_html_report()
