@@ -262,7 +262,17 @@ class Job_File():
         lineType = 2
         cv2.putText(image, content, position, font, fontScale, fontColor, lineType)
 
+    def iterate_dataframe(self, df):
+        issue_list = []
+        current_issue = []
+        for i in range(len(df)):
+            print(df.loc[i, "img_number"], df.loc[i, "is_error_up"], df.loc[i, "is_error_left"])
+            if df.loc[i, "img_number"]:
+                pass
+
+
     def generate_html_report(self):
+        self.iterate_dataframe(self.df_report)
         file = os.path.basename(self.video_path).split('.')[0]
         report_path = f'{self.report_path}/{file}_report.html'
 
@@ -326,7 +336,7 @@ class Job_File():
 
 if __name__ == '__main__':
     projet = Job_File()
-    path = "test_divers.mov"
+    path = "TEST_crop_0-23_FullDef.mov"
     projet.report_path = ".."
     projet.load_video_file(path)
     projet.analyse_video()

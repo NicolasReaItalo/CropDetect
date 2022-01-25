@@ -2,7 +2,7 @@ import os
 
 from PySide2.QtCore import Slot
 from fbs_runtime.application_context.PySide2 import ApplicationContext
-from PySide2 import QtWidgets
+from PySide2 import QtWidgets, QtCore
 from pathlib import Path
 
 
@@ -23,19 +23,21 @@ class StartWindow(QtWidgets.QMainWindow):
 
     # Widgets instantation
         self.job_list_widget = QtWidgets.QListWidget()
-        self.add_button = QtWidgets.QPushButton("Add Job")
+        self.add_file_button = QtWidgets.QPushButton("Add File")
+        self.add_folder_button = QtWidgets.QPushButton("Add Folder")
         self.remove_button = QtWidgets.QPushButton("Remove Job")
         self.start_button = QtWidgets.QPushButton("START")
 
     # Widgets positions
         self.disposition.addWidget(self.job_list_widget,0,0,4,6)
-        self.disposition.addWidget(self.add_button,4,0,1,1)
-        self.disposition.addWidget(self.remove_button,4,1,1,1)
+        self.disposition.addWidget(self.add_file_button, 4, 0, 1, 1)
+        self.disposition.addWidget(self.add_folder_button, 4, 1, 1, 1)
+        self.disposition.addWidget(self.remove_button,4,2,1,1)
         self.disposition.addWidget(self.start_button,4,5,1,1)
 
     # slots attributions
         self.start_button.clicked.connect(self.start)
-        self.add_button.clicked.connect(self.add_job)
+        self.add_file_button.clicked.connect(self.press_add_file_button)
         self.remove_button.clicked.connect(self.remove_job)
 
 
@@ -46,27 +48,19 @@ class StartWindow(QtWidgets.QMainWindow):
         self.widget = QtWidgets.QWidget()
         self.widget.setLayout(self.disposition)
         self.setCentralWidget(self.widget)
-        self.resize(800, 600)
+        self.resize(900, 400)
 
     def start(self):
         print("Button start clicked !")
+        self.show_new_window()
 
-    def add_job(self):
-        self.open_file_path_window()
-        self.refresh_job_list_widget()
+
 
     def remove_job(self):
-        print("Button remove_job clicked !")
+        self.remove_selected_job()
+        self.refresh_job_list_widget()
 
-    def open_file_path_window(self):
-        f = QtWidgets.QFileDialog.getOpenFileUrl(self, f"{Path.home()}/Desktop")
-        path = f[0].toLocalFile()
-        if is_video(path):
-            job  = Job_File()
-            job.load_video_file(path)
-            job_list.append(job)
-        else:
-            self.alert("Ceci n'est pas un fichier video valide")
+
 
     def refresh_job_list_widget(self):
         self.job_list_widget.clear()
@@ -81,6 +75,42 @@ class StartWindow(QtWidgets.QMainWindow):
 
     def alert(self,message):
         self.m = QtWidgets.QMessageBox.about(self,"Attention", message)
+
+    def remove_selected_job(self):
+        if len(job_list) > 0:
+            del job_list[self.job_list_widget.currentRow()]
+
+    def press_add_file_button(self):
+        self.w = AddFileWindow()
+        self.w.show()
+
+
+
+
+
+class AddFileWindow(QtWidgets.QWidget):
+    """
+    This "window" is a QWidget. If it has no parent, it
+    will appear as a free-floating window as we want.
+    """
+    def __init__(self):
+        super().__init__()
+        layout = QtWidgets.QVBoxLayout()
+        self.choose_file_button = QtWidgets.QPushButton("Select video File")
+        self.choose_report_button = QtWidgets.QPushButton("Select Report folder")
+        self.v_offset = QtWidgets.QSpinBox()
+
+        layout.addWidget(self.choose_file_button)
+        layout.addWidget(self.choose_report_button)
+        layout.addWidget(self.v_offset)
+
+
+        self.setLayout(layout)
+
+        self.resize(400,600)
+
+
+
 
 if __name__ == '__main__':
     appctxt = ApplicationContext()       # 1. Instantiate ApplicationContext
