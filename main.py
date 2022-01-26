@@ -52,7 +52,10 @@ class StartWindow(QtWidgets.QMainWindow):
 
     def start(self):
         print("Button start clicked !")
-        self.show_new_window()
+        for job in job_list:
+            job.analyse_video()
+            job.generate_html_report()
+            job.generate_csv()
 
 
 
@@ -81,10 +84,24 @@ class StartWindow(QtWidgets.QMainWindow):
             del job_list[self.job_list_widget.currentRow()]
 
     def press_add_file_button(self):
-        self.w = AddFileWindow()
-        self.w.show()
+      #  self.w = AddFileWindow()
+      #  self.w.show()
+      self.add_job()
 
+## temp for test
+    def open_file_path_window(self):
+        f = QtWidgets.QFileDialog.getOpenFileUrl(self, f"{Path.home()}/Desktop")
+        path = f[0].toLocalFile()
+        if is_video(path):
+            job = Job_File()
+            job.load_video_file(path)
+            job_list.append(job)
+        else:
+            self.alert("Ceci n'est pas un fichier video valide")
 
+    def add_job(self):
+        self.open_file_path_window()
+        self.refresh_job_list_widget()
 
 
 

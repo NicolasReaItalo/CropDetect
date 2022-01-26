@@ -287,8 +287,8 @@ class Job_File():
                         if "LEFT" not in  issue_list[-1].borders:
                             issue_list[-1].borders.append("LEFT")
                     if df.loc[i, "is_error_right"] == True:
-                        if "RIGHT" not in  issue_list[-1].borders:
-                            issue_list[-1].borders.append("RIGHToo")
+                        if "RIGHT" not in issue_list[-1].borders:
+                            issue_list[-1].borders.append("RIGHT")
                 else:  # it's a new issue
                     issue = CropIssue()
                     issue.start_frame = current_frame
