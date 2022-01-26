@@ -25,6 +25,14 @@ def is_video(file):
     return False
 
 
+class CropIssue():
+    def __init__(self):
+        self.start_frame = 0
+        self.end_frame = 0
+        self.borders = []
+
+
+
 
 class JobDir():
     def __init__(self):
@@ -264,15 +272,66 @@ class Job_File():
 
     def iterate_dataframe(self, df):
         issue_list = []
-        current_issue = []
         for i in range(len(df)):
-            print(df.loc[i, "img_number"], df.loc[i, "is_error_up"], df.loc[i, "is_error_left"])
-            if df.loc[i, "img_number"]:
-                pass
+            current_frame = df.loc[i, "img_number"]
+            if issue_list != []: # there is at least  an issue, let's check if the current image belong to this issue
+                if current_frame <= (issue_list[-1].end_frame + 24):
+                    issue_list[-1].end_frame = current_frame  # same issue, update the end_frame value
+                    if df.loc[i, "is_error_up"] == True:
+                        if "UP" not in  issue_list[-1].borders:
+                            issue_list[-1].borders.append("UP")
+                    if df.loc[i, "is_error_down"] == True:
+                        if "DOWN" not in  issue_list[-1].borders:
+                            issue_list[-1].borders.append("DOWN")
+                    if df.loc[i, "is_error_left"] == True:
+                        if "LEFT" not in  issue_list[-1].borders:
+                            issue_list[-1].borders.append("LEFT")
+                    if df.loc[i, "is_error_right"] == True:
+                        if "RIGHT" not in  issue_list[-1].borders:
+                            issue_list[-1].borders.append("RIGHToo")
+                else:  # it's a new issue
+                    issue = CropIssue()
+                    issue.start_frame = current_frame
+                    issue.end_frame = current_frame
+                    if df.loc[i, "is_error_up"] == True:
+                        issue.borders.append("UP")
+                    if df.loc[i, "is_error_down"] == True:
+                        issue.borders.append("DOWN")
+                    if df.loc[i, "is_error_left"] == True:
+                        issue.borders.append("LEFT")
+                    if df.loc[i, "is_error_right"] == True:
+                        issue.borders.append("RIGHT")
+                    issue_list.append(issue)
+            if issue_list == []:  #  no issues found previously let's add the first one
+                issue = CropIssue()
+                issue.start_frame = current_frame
+                issue.end_frame = current_frame
+                if df.loc[i, "is_error_up"] == True:
+                    issue.borders.append("UP")
+                if df.loc[i, "is_error_down"] == True:
+                    issue.borders.append("DOWN")
+                if df.loc[i, "is_error_left"] == True:
+                    issue.borders.append("LEFT")
+                if df.loc[i, "is_error_right"] == True:
+                    issue.borders.append("RIGHT")
+                issue_list.append(issue)
+
+        return issue_list
+
 
 
     def generate_html_report(self):
-        self.iterate_dataframe(self.df_report)
+        self.issue_list = self.iterate_dataframe(self.df_report)
+        ##debug
+        print(self.issue_list)
+        for issue in self.issue_list:
+            print(issue.start_frame)
+            print(issue.end_frame)
+            print(issue.borders)
+            print("--------------------")
+
+
+        ##f debuf
         file = os.path.basename(self.video_path).split('.')[0]
         report_path = f'{self.report_path}/{file}_report.html'
 
@@ -314,12 +373,11 @@ class Job_File():
                                 <td class="issue-header">Issue type</td><td class="issue-header">Timecode(In/Out)</td>\
                                 <td class="issue-header">Details</td></tr></thead><tbody>'
 
-        for issue_number, issue in enumerate(self.issue_list, start=1):
-            snapshot_path = f'./report_snapshots/{os.path.basename(self.video_path).split(".")[0]}' + f'_{issue_number}.png'
+        for issue in self.issue_list:
+            snapshot_path = f'./report_snapshots/{os.path.basename(self.video_path).split(".")[0]}' + f'_{issue.start_frame}.png'
             html_file = html_file + f' <tr><td><a href="{snapshot_path}"><img src="{snapshot_path}"class="img_thumbnail">\
-            </a></td><td>Black lines detected</td><td>{timecode.frame_to_tc_02((issue.get("start_frm") + self.tc_offset), self.framerate)}\
-            <br>{timecode.frame_to_tc_02((issue.get("end_frm") + self.tc_offset), self.framerate)}</td><td>{issue.get("lines_detected")}</td></tr>'
-
+                                 </a></td><td>Black lines detected</td><td>{timecode.frame_to_tc_02((issue.start_frame + self.tc_offset), self.framerate)}\
+                                 <br>{timecode.frame_to_tc_02((issue.end_frame + self.tc_offset), self.framerate)}</td><td>{issue.borders}</td></tr>'
         html_file = html_file + f'</tbody></table></div></body><footer></footer></html>'
 
         with open(report_path, "w") as report:
@@ -336,7 +394,7 @@ class Job_File():
 
 if __name__ == '__main__':
     projet = Job_File()
-    path = "TEST_crop_0-23_FullDef.mov"
+    path = "calibration_dataframe48.mov"
     projet.report_path = ".."
     projet.load_video_file(path)
     projet.analyse_video()
