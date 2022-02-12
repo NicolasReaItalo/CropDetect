@@ -23,16 +23,14 @@ class StartWindow(QtWidgets.QMainWindow):
 
     # Widgets instantation
         self.job_list_widget = QtWidgets.QListWidget()
-        self.add_file_button = QtWidgets.QPushButton("Add File")
-        self.add_folder_button = QtWidgets.QPushButton("Add Folder")
+        self.add_file_button = QtWidgets.QPushButton("Add Job")
         self.remove_button = QtWidgets.QPushButton("Remove Job")
         self.start_button = QtWidgets.QPushButton("START")
 
     # Widgets positions
         self.disposition.addWidget(self.job_list_widget,0,0,4,6)
         self.disposition.addWidget(self.add_file_button, 4, 0, 1, 1)
-        self.disposition.addWidget(self.add_folder_button, 4, 1, 1, 1)
-        self.disposition.addWidget(self.remove_button,4,2,1,1)
+        self.disposition.addWidget(self.remove_button,4,1,1,1)
         self.disposition.addWidget(self.start_button,4,5,1,1)
 
     # slots attributions
@@ -84,24 +82,11 @@ class StartWindow(QtWidgets.QMainWindow):
             del job_list[self.job_list_widget.currentRow()]
 
     def press_add_file_button(self):
-      #  self.w = AddFileWindow()
-      #  self.w.show()
-      self.add_job()
-
-## temp for test
-    def open_file_path_window(self):
-        f = QtWidgets.QFileDialog.getOpenFileUrl(self, f"{Path.home()}/Desktop")
-        path = f[0].toLocalFile()
-        if is_video(path):
-            job = Job_File()
-            job.load_video_file(path)
-            job_list.append(job)
-        else:
-            self.alert("Ceci n'est pas un fichier video valide")
-
-    def add_job(self):
-        self.open_file_path_window()
+        self.w = AddFileWindow()
+        self.w.show()
         self.refresh_job_list_widget()
+
+
 
 
 
@@ -112,21 +97,77 @@ class AddFileWindow(QtWidgets.QWidget):
     """
     def __init__(self):
         super().__init__()
-        layout = QtWidgets.QVBoxLayout()
+        self.job = Job_File()
+
+        self.disposition = QtWidgets.QGridLayout()
         self.choose_file_button = QtWidgets.QPushButton("Select video File")
+        self.file_label = QtWidgets.QLabel("")
         self.choose_report_button = QtWidgets.QPushButton("Select Report folder")
-        self.v_offset = QtWidgets.QSpinBox()
+        self.report_label = QtWidgets.QLabel("")
+        self.vertical_inner_ratio = QtWidgets.QSpinBox()
+        self.vertical_inner_ratio_spinbox = QtWidgets.QSpinBox()
+        self.vertical_inner_ratio_spinbox.setSuffix("  px")
+        self.vertical_inner_ratio_label = QtWidgets.QLabel("Vertical Inner Ratio\nLeave to analyse all picture")
+        self.horizontal_inner_ratio_spinbox = QtWidgets.QSpinBox()
+        self.horizontal_inner_ratio_spinbox.setSuffix("  px")
+        self.horizontal_inner_ratio_label = QtWidgets.QLabel("Horizontal Inner Ratio\nLeave to analyse all picture")
+        self.cancel_button = QtWidgets.QPushButton("cancel")
+        self.ok_button = QtWidgets.QPushButton("   Ok   ")
 
-        layout.addWidget(self.choose_file_button)
-        layout.addWidget(self.choose_report_button)
-        layout.addWidget(self.v_offset)
+
+        self.disposition.addWidget(self.choose_file_button,0,0,1,1)
+        self.disposition.addWidget(self.file_label,0,1,1,4)
+        self.disposition.addWidget(self.choose_report_button,1,0,1,1)
+        self.disposition.addWidget(self.report_label, 1, 1, 1, 4)
+        self.disposition.addWidget(self.vertical_inner_ratio_spinbox ,2,0,1,1)
+        self.disposition.addWidget(self.vertical_inner_ratio_label ,2,1,1,1)
+        self.disposition.addWidget(self.horizontal_inner_ratio_spinbox ,3,0,1,1)
+        self.disposition.addWidget(self.horizontal_inner_ratio_label ,3,1,1,1)
+        self.disposition.addWidget(self.cancel_button ,4,0,1,1)
+        self.disposition.addWidget(self.ok_button ,4,1,1,1)
+
+        self.setLayout(self.disposition)
+
+        self.choose_file_button.clicked.connect(self.open_file_path_window)
+        self.choose_report_button.clicked.connect(self.open_folder_path_window)
+        self.cancel_button.clicked.connect(self.press_cancel_button)
+        self.ok_button.clicked.connect(self.press_ok_button)
+
+        self.resize(550,220)
 
 
-        self.setLayout(layout)
+    def open_file_path_window(self):
+        f = QtWidgets.QFileDialog.getOpenFileUrl(self, "Select Folder")
+        path = f[0].toLocalFile()
+        if is_video(path):
+            self.job.load_video_file(path)
+            self.horizontal_inner_ratio_spinbox.setMaximum(self.job.x_res)
+            self.horizontal_inner_ratio_spinbox.setValue(self.job.x_res)
+            self.vertical_inner_ratio_spinbox.setMaximum(self.job.y_res)
+            self.vertical_inner_ratio_spinbox.setValue(self.job.y_res)
+            self.file_label.setText(self.job.video_path)
+        else:
+            error = QtWidgets.QMessageBox()
+            error.setText("This is not a valid Video File.")
+            error.exec_()
 
-        self.resize(400,600)
 
+    def open_folder_path_window(self):
+        f = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Folder')
+        report_path = f
+        self.job.report_path = report_path
+        self.report_label.setText(self.job.report_path)
 
+    def press_cancel_button(self):
+        self.close()
+
+    def press_ok_button(self):
+        if (self.job.video_path != "") and (self.job.report_path != ""):
+            job_list.append(self.job)
+            self.close()
+
+    def refresh_spinbox(self):
+        pass
 
 
 if __name__ == '__main__':

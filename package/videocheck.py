@@ -48,11 +48,13 @@ class Job_File():
     def __init__(self):
         self.job_type = "File"
         self.video_path = ''
-        self.report_path = '.'
+        self.report_path = ''
         self.framerate = 0
         self.codec = ''
         self.x_res = 0
         self.y_res = 0
+        self.x_inner = 0
+        self.y_inner = 0
         self.start_frame = 0
         self.end_frame = 0
         self.complete = False
@@ -135,10 +137,10 @@ class Job_File():
                    '-f', 'image2pipe', '-']
         pipe = sp.Popen(command, stdout=sp.PIPE, bufsize=10 ** 8)
 
-        if self.x_res > 1998:
-            scale_factor = 6
-        else:
+        if self.x_res > 2048:
             scale_factor = 4
+        else:
+            scale_factor = 2
 
         font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -235,6 +237,7 @@ class Job_File():
         self.end_frame = self.get_duration_frames()
         self.codec = self.get_codec()
         self.tc_offset = self.get_timecode()
+        self.report_path = "."
 
         print(self.generate_header())
 
@@ -395,7 +398,6 @@ class Job_File():
 if __name__ == '__main__':
     projet = Job_File()
     path = "calibration_dataframe48.mov"
-    projet.report_path = ".."
     projet.load_video_file(path)
     projet.analyse_video()
     projet.generate_html_report()
