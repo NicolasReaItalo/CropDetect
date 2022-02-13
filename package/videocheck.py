@@ -30,6 +30,7 @@ class CropIssue():
         self.start_frame = 0
         self.end_frame = 0
         self.borders = []
+        self.var_image = 10000000
 
 
 
@@ -70,6 +71,7 @@ class Job_File():
             "is_error_right": [],
             "is_error_down": [],
             "is_error_left": [],
+            "var_image": []
         }
         self.df_report = []
 
@@ -161,7 +163,7 @@ class Job_File():
                                 0.5, 20, 100)
             self.write_on_image(resized, f'Image:{(current_frame)}', 0.5, 20, 130)
 
-            cv2.imshow(f'{os.path.basename(self.video_path)}: Analyse en cours Appuyer sur q pour arreter',
+            cv2.imshow(f'{os.path.basename(self.video_path)}: Analyse in progress, press q to stop',
                        resized)
 
             # cropping the image to get the 4 exterior lines to check
@@ -178,6 +180,7 @@ class Job_File():
 
             if (test_top or test_right or test_bottom or test_left):  ## blanking error detected
                 self.dict_report["img_number"].append(current_frame)
+                self.dict_report["var_image"].append(int(numpy.var(image)))
                 if test_top:
                     self.dict_report["is_error_up"].append(True)
                 else:
@@ -208,6 +211,7 @@ class Job_File():
                 break
             if current_frame == self.end_frame:
                 self.complete = True
+                self.last_frame_analysed = current_frame
                 self.elapsed_time = time.clock() - self.start_time
                 break
         pipe.stdout.flush()
@@ -277,8 +281,9 @@ class Job_File():
         issue_list = []
         for i in range(len(df)):
             current_frame = df.loc[i, "img_number"]
+            current_var = df.loc[i, "var_image"]
             if issue_list != []: # there is at least  an issue, let's check if the current image belong to this issue
-                if current_frame <= (issue_list[-1].end_frame + 24):
+                if current_frame <= (issue_list[-1].end_frame + 24) and ((current_var >= (issue_list[-1].var_image - (issue_list[-1].var_image//5))) and (current_var <= (issue_list[-1].var_image+issue_list[-1].var_image//5))):
                     issue_list[-1].end_frame = current_frame  # same issue, update the end_frame value
                     if df.loc[i, "is_error_up"] == True:
                         if "UP" not in  issue_list[-1].borders:
@@ -292,6 +297,7 @@ class Job_File():
                     if df.loc[i, "is_error_right"] == True:
                         if "RIGHT" not in issue_list[-1].borders:
                             issue_list[-1].borders.append("RIGHT")
+
                 else:  # it's a new issue
                     issue = CropIssue()
                     issue.start_frame = current_frame
@@ -305,10 +311,13 @@ class Job_File():
                     if df.loc[i, "is_error_right"] == True:
                         issue.borders.append("RIGHT")
                     issue_list.append(issue)
+                issue_list[-1].var_image = current_var
+
             if issue_list == []:  #  no issues found previously let's add the first one
                 issue = CropIssue()
                 issue.start_frame = current_frame
                 issue.end_frame = current_frame
+                issue.var_image = current_var
                 if df.loc[i, "is_error_up"] == True:
                     issue.borders.append("UP")
                 if df.loc[i, "is_error_down"] == True:
@@ -356,7 +365,6 @@ class Job_File():
                                 <li>codec :  <code>{self.codec}</code></li>\
                                 <li>definition : <code>{self.x_res}x{self.y_res}</code></li>\
                                 <li>framerate : <code>{self.framerate}</code></li>\
-                                <li>starting timecode : <code>{timecode.frame_to_tc_02((self.start_frame + self.tc_offset), self.framerate)}</code></li>\
                                 <li>Duration:  <code>{timecode.frame_to_tc_02((self.end_frame), self.framerate)}</code></li>\
                                 </ul></div>'
 
