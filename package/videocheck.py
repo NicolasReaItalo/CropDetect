@@ -2,28 +2,106 @@ import cv2
 import subprocess as sp
 import numpy
 import time
-
-from package import timecode
-
-from ffprobe import FFProbe
-
 import os
 import json
 import datetime
 import pandas as pd
+import pathlib
 
+from package import timecode
+
+
+############## ffprobe utility - needs it's own package
+def ffprobe(video_file):
+    """
+    ffprobe runs the ffprobe binary command onto the selected video file
+    :param video_file: (string) the video file path
+    :return: a JSON object containing the ffprobe report
+    """
+    path = pathlib.Path(video_file)
+
+    command = f'/usr/local/bin/ffprobe -v quiet -print_format json -show_format -show_streams "{path.__str__()}"'
+    try:
+        proc = sp.check_output(command, shell=True)
+        return json.loads(proc.decode())
+    except sp.CalledProcessError:
+        return False # There was an error - command exited with non-zero code
 
 def is_video(file):
-    """Check if the file referenced is a valid video codec
-    :param file : string path to a video file
     """
-    if os.path.exists(file):
-        metadata = FFProbe(file)
-        if len(metadata.streams) > 0:
-            if metadata.streams[0].is_video():
-                return True
-    return False
+    Check if the input file is a video file
+    :param file: (string) the video file path
+    :return:
+    """
+    test = ffprobe(file)
+    if test:
+        return True
+    else:
+        print(file)
+        return False
 
+def get_codec(file):
+    """
+    Return the Codec of the video as a string
+    :param file: (string) the video file path
+    :return: (string) Codec
+    """
+    test = ffprobe(file)
+    if test:
+        if test["format"]["nb_streams"] > 0:
+            if test["streams"][0]["codec_type"] == "video":
+                return test["streams"][0]["codec_long_name"]
+    else:
+        return False
+
+def get_framerate(file):
+    """
+    Return the video file framerate as a float
+    :param file: (string) the video file path
+    :return:(float) framerate
+    """
+    test = ffprobe(file)
+    if test:
+        if test["format"]["nb_streams"] > 0:
+            if test["streams"][0]["codec_type"] == "video":
+                a = test["streams"][0]["time_base"]
+            return int(a.split('/')[1])
+    else:
+        return False
+
+
+def get_resolution(file):
+    """
+    Return the width and height in pixels of the video file
+    :param file: (string) the video file path
+    :return: (int) width, height
+    """
+    test = ffprobe(file)
+    if test:
+        if test["format"]["nb_streams"] > 0:
+            if test["streams"][0]["codec_type"] == "video":
+                return int(test["streams"][0]["width"]),int(test["streams"][0]["height"])
+    else:
+        return False
+
+
+def get_duration(file):
+    """
+    Return the duration in frames of the video
+    :param file: (string) the video file path
+    :return: (int) frame_number
+    """
+    test = ffprobe(file)
+    if test:
+        if test["format"]["nb_streams"] > 0:
+            if test["streams"][0]["codec_type"] == "video":
+                return int(test["streams"][0]["nb_frames"])
+    else:
+        return False
+
+
+
+###############
 
 class CropIssue():
     def __init__(self):
@@ -31,17 +109,6 @@ class CropIssue():
         self.end_frame = 0
         self.borders = []
         self.var_image = 10000000
-
-
-
-
-class JobDir():
-    def __init__(self):
-        self.job_type = "Dir"
-        self.dir_path = ""
-
-
-
 
 
 class Job_File():
@@ -58,6 +125,7 @@ class Job_File():
         self.y_inner = 0
         self.start_frame = 0
         self.end_frame = 0
+        self.done = False
         self.complete = False
         self.last_frame_analysed = 0
         self.analyse_duration = ''
@@ -75,63 +143,38 @@ class Job_File():
         }
         self.df_report = []
 
-    def get_resolution(self):
-        if os.path.exists(self.video_path):
-            metadata = FFProbe(self.video_path)
-            return metadata.streams[0].frame_size()
-        return False
 
-    def get_framerate(self):
-        if os.path.exists(self.video_path):
-            metadata = FFProbe(self.video_path)
-            return metadata.streams[0].__dict__.get('framerate')
-        return False
+    def load_video_file(self, path):
+        self.video_path = path
+        if not is_video(self.video_path):
+           self.video_path = ''
+           return False
+        self.end_frame = get_duration(self.video_path)
+        self.x_res, self.y_res = get_resolution(self.video_path)
+        self.framerate = get_framerate(self.video_path)
+        self.end_frame = get_duration(self.video_path)
+        self.codec = get_codec(self.video_path)
+        self.tc_offset = 0
+        self.report_path = "."
 
-    def get_duration_frames(self):
-        if os.path.exists(self.video_path):
-            metadata = FFProbe(self.video_path)
-            return metadata.streams[0].frames()
-        return False
-
-    def get_codec(self):
-        """return the codec of the video referenced in self.video_path
-                return False is no file is found"""
-        if os.path.exists(self.video_path):
-            metadata = FFProbe(self.video_path)
-            return metadata.streams[0].codec_description()
-        return False
-
-    def get_timecode(self):
-        """return the starting tc of the video referenced in self.video_path
-        return False is no file is found"""
-        if os.path.exists(self.video_path):
-            stream = os.popen(f'ffprobe  -show_streams -print_format json {self.video_path}')
-            a = stream.read()
-            dictionnaire = json.loads(a)
-            tc = dictionnaire.get('streams')[-1].get('tags').get('timecode')
-            if not tc:
-                print('impossible de lire le tc')
-                return 0
-            return timecode.tc_str_to_frames(tc, self.framerate)
-        return False
-
-    def is_video(self):
-        """Check if the file referenced in self.video_path is a valid video codec"""
-        if os.path.exists(self.video_path):
-            metadata = FFProbe(self.video_path)
-            if len(metadata.streams) > 0:
-                if metadata.streams[0].is_video():
-                    return True
-        return False
 
     def analyse_video(self):
 
-        if not self.is_video():
-            return False
+        #create the report folder
+        video_file_folder = pathlib.Path(os.path.dirname(self.video_path))
+        #self.report_path =
+        report_folder_name  = self.create_report_folder_name()
+        report_path = video_file_folder / report_folder_name
+        report_path.mkdir(parents=True, exist_ok=True)
+        self.report_path = str(report_path)
+
+
+       # if not is_video(self.video_path):
+        #    return False
         self.issue_list = []
         current_frame = 0
         #        self.start_time = time.clock()
-        command = ["ffmpeg",
+        command = ["/usr/local/bin/ffmpeg",
                    '-i', self.video_path,  # fifo is the named pipe
                    '-pix_fmt', 'bgr24',  # opencv requires bgr24 pixel format.
                    '-vcodec', 'rawvideo',
@@ -157,13 +200,13 @@ class Job_File():
             resized = cv2.resize(image, (self.x_res // scale_factor, self.y_res // scale_factor), 1, 1)
 
             self.write_on_image(resized, f'frame:{str(current_frame)}', 0.5, 20, 40)
-            self.write_on_image(resized, f'progres:{(round(current_frame / self.end_frame, 1)) * 100} %', 0.5, 20, 70)
+            self.write_on_image(resized, f'progress:{(round(current_frame / self.end_frame, 1)) * 100} %', 0.5, 20, 70)
             self.write_on_image(resized,
                                 f'Time-Code:{timecode.frame_to_tc_02((current_frame + self.tc_offset), self.framerate)}',
                                 0.5, 20, 100)
-            self.write_on_image(resized, f'Image:{(current_frame)}', 0.5, 20, 130)
 
-            cv2.imshow(f'{os.path.basename(self.video_path)}: Analyse in progress, press q to stop',
+
+            cv2.imshow(f'{os.path.basename(self.video_path)}: Analysis in progress, press q to stop',
                        resized)
 
             # cropping the image to get the 4 exterior lines to check
@@ -208,49 +251,44 @@ class Job_File():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 self.last_frame_analysed = current_frame
                 self.elapsed_time = time.clock() - self.start_time
+                self.done = True
                 break
             if current_frame == self.end_frame:
+                self.done = True
                 self.complete = True
                 self.last_frame_analysed = current_frame
                 self.elapsed_time = time.clock() - self.start_time
                 break
         pipe.stdout.flush()
         cv2.destroyAllWindows()
-        self.init_df()
+        self.init_df() # saving every error frames into a dataframe
+        self.issue_list = self.iterate_dataframe(self.df_report) # iterate through the dataframe to generate a shot
+        # by shot issue list
 
     def test_line_blanking(self, image, line):
         b_max = numpy.max(line[:, :, 0])
         g_max = numpy.max(line[:, :, 1])
         r_max = numpy.max(line[:, :, 2])
 
-        if (b_max <= 40 and g_max <= 40 and r_max <= 40):
+        if (b_max <= 30 and g_max <= 30 and r_max <= 30):
             var_line = numpy.var(line)
             var_image = numpy.var(image)
             if var_line <= (var_image // 20):
                 return True
         return False
 
-    def load_video_file(self, path):
-        self.video_path = path
-        if not self.is_video():
-            self.video_path = ''
-            return "Erreur : ce n'est pas un fichier video"
 
-        self.x_res, self.y_res = self.get_resolution()
-        self.framerate = self.get_framerate()
-        self.end_frame = self.get_duration_frames()
-        self.codec = self.get_codec()
-        self.tc_offset = self.get_timecode()
-        self.report_path = "."
 
-        print(self.generate_header())
+    def create_report_folder_name(self):
+        base_filename = os.path.basename(self.video_path).split('.')[0]
+        if len(base_filename) > 40:
+            base_filename = base_filename[0:40]
+        t = datetime.datetime.now()
+        timestamp = t.strftime("%y%m%d")
+        return f"{base_filename}____{timestamp}"
 
-    def init_df(self):
-        self.df_report = pd.DataFrame(self.dict_report)
 
-    def generate_header(self):
-        return f"filename: {os.path.basename(self.video_path)} \n {self.codec} \n framerate: {self.framerate} fps \n resolution(px): {self.x_res}x{self.y_res} \n " \
-               f"Duration (h:m:s:i) : {timecode.frame_to_tc_02(self.end_frame, self.framerate)}   / {self.end_frame} frames  \n starting timecode: {timecode.frame_to_tc_02((self.start_frame + self.tc_offset), self.framerate)}"
+
 
     def save_snapshot(self, img, image_number):
         snapshot_path = self.report_path + '/report_snapshots'
@@ -260,14 +298,22 @@ class Job_File():
         filename = os.path.basename(self.video_path).split('.')[0]
         filename = filename + f'_{image_number}.png'
         # write timecode on image
-        self.write_on_image(img, timecode.frame_to_tc_02((image_number + self.tc_offset), self.framerate), 3,
+        self.write_on_image(img, timecode.frame_to_tc_02((image_number), self.framerate), 3,
                             img.shape[1] // 10,
                             img.shape[0] // 10)
         self.write_on_image(img, f'Image:{(image_number)}', 3, img.shape[1] // 3, img.shape[0] // 3)
 
+        if img.shape[1] <= 1920:
+            scale_factor = 3
+        else:
+            scale_factor = 6
+
+        resized = cv2.resize(img, (self.x_res // scale_factor, self.y_res // scale_factor), 1, 1)
         path = snapshot_path + '/' + filename
-        cv2.imwrite(filename=path, img=img)
+        cv2.imwrite(filename=path, img=resized)
         return
+
+
 
     def write_on_image(self, image, content, size, x, y):
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -277,13 +323,17 @@ class Job_File():
         lineType = 2
         cv2.putText(image, content, position, font, fontScale, fontColor, lineType)
 
+    def init_df(self):
+        self.df_report = pd.DataFrame(self.dict_report)
+
+
     def iterate_dataframe(self, df):
         issue_list = []
         for i in range(len(df)):
             current_frame = df.loc[i, "img_number"]
             current_var = df.loc[i, "var_image"]
             if issue_list != []: # there is at least  an issue, let's check if the current image belong to this issue
-                if current_frame <= (issue_list[-1].end_frame + 24) and ((current_var >= (issue_list[-1].var_image - (issue_list[-1].var_image//5))) and (current_var <= (issue_list[-1].var_image+issue_list[-1].var_image//5))):
+                if current_frame <= (issue_list[-1].end_frame + 48) and ((current_var >=(issue_list[-1].var_image//2) ) and (current_var <= (issue_list[-1].var_image*2))):
                     issue_list[-1].end_frame = current_frame  # same issue, update the end_frame value
                     if df.loc[i, "is_error_up"] == True:
                         if "UP" not in  issue_list[-1].borders:
@@ -331,19 +381,41 @@ class Job_File():
         return issue_list
 
 
+    def generate_edl(self):
+        file = os.path.basename(self.video_path).split('.')[0]
+        edl_name = f'{file}_markers.edl'
+        edl_path = f'{self.report_path}/{edl_name}'
+        edl_content = f'TITLE: {file}\n'
+        edl_content = edl_content + f'FCM: NON-DROP FRAME\n\n'
+        issue_number = 1
+
+        for issue in self.issue_list:
+            if issue_number >= 10:
+                if issue_number >= 100:
+                    edl_issue = f'{issue_number}'
+                else:
+                    edl_issue = f'0{issue_number}'
+            else:
+                edl_issue = f'00{issue_number}'
+
+            edl_content = edl_content + f'{edl_issue}  {edl_issue}      V     C        ' \
+                                        f'{timecode.frame_to_tc_02(issue.start_frame,self.framerate)} {timecode.frame_to_tc_02(issue.end_frame,self.framerate)} ' \
+                                        f'{timecode.frame_to_tc_02(issue.start_frame,self.framerate)} {timecode.frame_to_tc_02(issue.end_frame,self.framerate)}  \n'
+
+            edl_content = edl_content + f' |C:ResolveColorRed |M:{issue_number}-{str(issue.borders)} |D:{(issue.end_frame-issue.start_frame) + 2 }\n\n'
+
+            issue_number += 1
+
+        with open(edl_path, "w") as edl:
+            edl.write(edl_content)
+            edl.close()
+        return
+
+
+
 
     def generate_html_report(self):
-        self.issue_list = self.iterate_dataframe(self.df_report)
-        ##debug
-        print(self.issue_list)
-        for issue in self.issue_list:
-            print(issue.start_frame)
-            print(issue.end_frame)
-            print(issue.borders)
-            print("--------------------")
 
-
-        ##f debuf
         file = os.path.basename(self.video_path).split('.')[0]
         report_path = f'{self.report_path}/{file}_report.html'
 
@@ -405,8 +477,9 @@ class Job_File():
 
 if __name__ == '__main__':
     projet = Job_File()
-    path = "calibration_dataframe48.mov"
+    path = "/Users/user/Documents/DEF/Version_0-5/test_ffprobe/test-23.mov"
     projet.load_video_file(path)
     projet.analyse_video()
     projet.generate_html_report()
     projet.generate_csv()
+    projet.generate_edl()
