@@ -16,7 +16,7 @@ def ffprobe(video_file):
     """
     ffprobe runs the ffprobe binary command onto the selected video file
     :param video_file: (string) the video file path
-    :return: a JSON object containing the ffprobe report
+    :return: a dict containing the ffprobe report
     """
     path = pathlib.Path(video_file)
 
@@ -37,7 +37,7 @@ def is_video(file):
     if test:
         return True
     else:
-        print(file)
+        print(test)
         return False
 
 def get_codec(file):
