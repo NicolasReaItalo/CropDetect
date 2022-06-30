@@ -45,6 +45,8 @@ job_list = []
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+        self.ffmpeg_path = "."
+        self.ffprobe_path = "."
 
 # MAIN LAYOUT
         self.disposition = QtWidgets.QGridLayout()
@@ -190,6 +192,9 @@ class Window(QtWidgets.QMainWindow):
             error.setText(f"This is not a valid Video File:{path}")
             error.exec_()
             return
+        # update the binaries path
+        job.ffmpeg_path = self.ffmpeg_path
+        job.ffprobe_path = self.ffprobe_path
         # append job
         job_list.append(job)
         self.refresh_job_list_widget()
@@ -213,7 +218,15 @@ def clearLayout(layout):
 if __name__ == '__main__':
     appctxt = ApplicationContext()       # 1. Instantiate ApplicationContext
     window = Window()
+
+ # ressources : ffprobe and ffmpeg bianries + ui stylesheet
+    window.ffmpeg_path = appctxt.get_resource("ffmpeg")
+    ffprobe_path = appctxt.get_resource("ffprobe")
     stylesheet = appctxt.get_resource('SpyBot.qss')
+
+
+
+
     appctxt.app.setStyleSheet(open(stylesheet).read())
     window.show()
     exit_code = appctxt.app.exec_()      # 2. Invoke appctxt.app.exec_()

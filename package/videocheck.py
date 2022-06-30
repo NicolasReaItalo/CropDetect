@@ -11,6 +11,7 @@ import pathlib
 from package import timecode
 
 
+
 ############## ffprobe utility - needs it's own package
 def ffprobe(video_file):
     """
@@ -142,7 +143,8 @@ class Job_File():
             "var_image": []
         }
         self.df_report = []
-
+        self.ffmpeg_path = ""  # fallback value, to be overridden by the fbs wrapper in main.py
+        self.ffprobe_path = ""  # fallback value, to be overridden by the fbs wrapper in main.py
 
     def load_video_file(self, path):
         self.video_path = path
@@ -174,7 +176,7 @@ class Job_File():
         self.issue_list = []
         current_frame = 0
         #        self.start_time = time.clock()
-        command = ["/usr/local/bin/ffmpeg",
+        command = [self.ffmpeg_path,
                    '-i', self.video_path,  # fifo is the named pipe
                    '-pix_fmt', 'bgr24',  # opencv requires bgr24 pixel format.
                    '-vcodec', 'rawvideo',
@@ -477,8 +479,9 @@ class Job_File():
 
 if __name__ == '__main__':
     projet = Job_File()
-    path = "/Users/user/Documents/DEF/Version_0-5/test_ffprobe/test-23.mov"
-    projet.load_video_file(path)
+    projet.ffmpeg_path = "/usr/local/bin/ffmpeg"
+    projet.ffprobe_path = "/usr/local/bin/ffprobe"
+    projet.load_video_file("/Users/user/Documents/DEF/Version_0-5/test_ffprobe/test-23.mov")
     projet.analyse_video()
     projet.generate_html_report()
     projet.generate_csv()
