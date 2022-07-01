@@ -12,98 +12,6 @@ from package import timecode
 
 
 
-############## ffprobe utility - needs it's own package
-def ffprobe(video_file):
-    """
-    ffprobe runs the ffprobe binary command onto the selected video file
-    :param video_file: (string) the video file path
-    :return: a dict containing the ffprobe report
-    """
-    path = pathlib.Path(video_file)
-
-    command = f'/usr/local/bin/ffprobe -v quiet -print_format json -show_format -show_streams "{path.__str__()}"'
-    try:
-        proc = sp.check_output(command, shell=True)
-        return json.loads(proc.decode())
-    except sp.CalledProcessError:
-        return False # There was an error - command exited with non-zero code
-
-def is_video(file):
-    """
-    Check if the input file is a video file
-    :param file: (string) the video file path
-    :return:
-    """
-    test = ffprobe(file)
-    if test:
-        return True
-    else:
-        print(test)
-        return False
-
-def get_codec(file):
-    """
-    Return the Codec of the video as a string
-    :param file: (string) the video file path
-    :return: (string) Codec
-    """
-    test = ffprobe(file)
-    if test:
-        if test["format"]["nb_streams"] > 0:
-            if test["streams"][0]["codec_type"] == "video":
-                return test["streams"][0]["codec_long_name"]
-    else:
-        return False
-
-def get_framerate(file):
-    """
-    Return the video file framerate as a float
-    :param file: (string) the video file path
-    :return:(float) framerate
-    """
-    test = ffprobe(file)
-    if test:
-        if test["format"]["nb_streams"] > 0:
-            if test["streams"][0]["codec_type"] == "video":
-                a = test["streams"][0]["time_base"]
-            return int(a.split('/')[1])
-    else:
-        return False
-
-
-def get_resolution(file):
-    """
-    Return the width and height in pixels of the video file
-    :param file: (string) the video file path
-    :return: (int) width, height
-    """
-    test = ffprobe(file)
-    if test:
-        if test["format"]["nb_streams"] > 0:
-            if test["streams"][0]["codec_type"] == "video":
-                return int(test["streams"][0]["width"]),int(test["streams"][0]["height"])
-    else:
-        return False
-
-
-def get_duration(file):
-    """
-    Return the duration in frames of the video
-    :param file: (string) the video file path
-    :return: (int) frame_number
-    """
-    test = ffprobe(file)
-    if test:
-        if test["format"]["nb_streams"] > 0:
-            if test["streams"][0]["codec_type"] == "video":
-                return int(test["streams"][0]["nb_frames"])
-    else:
-        return False
-
-
-
-###############
-
 class CropIssue():
     def __init__(self):
         self.start_frame = 0
@@ -148,14 +56,14 @@ class Job_File():
 
     def load_video_file(self, path):
         self.video_path = path
-        if not is_video(self.video_path):
+        if not self.is_video(self.video_path):
            self.video_path = ''
            return False
-        self.end_frame = get_duration(self.video_path)
-        self.x_res, self.y_res = get_resolution(self.video_path)
-        self.framerate = get_framerate(self.video_path)
-        self.end_frame = get_duration(self.video_path)
-        self.codec = get_codec(self.video_path)
+        self.end_frame = self.get_duration(self.video_path)
+        self.x_res, self.y_res = self.get_resolution(self.video_path)
+        self.framerate = self.get_framerate(self.video_path)
+        self.end_frame = self.get_duration(self.video_path)
+        self.codec = self.get_codec(self.video_path)
         self.tc_offset = 0
         self.report_path = "."
 
@@ -475,6 +383,94 @@ class Job_File():
         file = os.path.basename(self.video_path).split('.')[0]
         report_path = f'{self.report_path}/{file}_report.csv'
         self.df_report.to_csv(report_path)
+
+
+### FFPROBE UTILITY FUNCTIONS
+    def ffprobe(self,video_file):
+        """
+        ffprobe runs the ffprobe binary command onto the selected video file
+        :param video_file: (string) the video file path
+        :return: a dict containing the ffprobe report
+        """
+        path = pathlib.Path(video_file)
+
+        command = f'{self.ffprobe_path} -v quiet -print_format json -show_format -show_streams "{path.__str__()}"'
+        try:
+            proc = sp.check_output(command, shell=True)
+            return json.loads(proc.decode())
+        except sp.CalledProcessError:
+            return False  # There was an error - command exited with non-zero code
+
+    def is_video(self,file):
+        """
+        Check if the input file is a video file
+        :param file: (string) the video file path
+        :return:
+        """
+        test = self.ffprobe(file)
+        if test:
+            return True
+        else:
+            print(test)
+            return False
+
+    def get_codec(self,file):
+        """
+        Return the Codec of the video as a string
+        :param file: (string) the video file path
+        :return: (string) Codec
+        """
+        test = self.ffprobe(file)
+        if test:
+            if test["format"]["nb_streams"] > 0:
+                if test["streams"][0]["codec_type"] == "video":
+                    return test["streams"][0]["codec_long_name"]
+        else:
+            return False
+
+    def get_framerate(self,file):
+        """
+        Return the video file framerate as a float
+        :param file: (string) the video file path
+        :return:(float) framerate
+        """
+        test = self.ffprobe(file)
+        if test:
+            if test["format"]["nb_streams"] > 0:
+                if test["streams"][0]["codec_type"] == "video":
+                    a = test["streams"][0]["time_base"]
+                return int(a.split('/')[1])
+        else:
+            return False
+
+    def get_resolution(self,file):
+        """
+        Return the width and height in pixels of the video file
+        :param file: (string) the video file path
+        :return: (int) width, height
+        """
+        test = self.ffprobe(file)
+        if test:
+            if test["format"]["nb_streams"] > 0:
+                if test["streams"][0]["codec_type"] == "video":
+                    return int(test["streams"][0]["width"]), int(test["streams"][0]["height"])
+        else:
+            return False
+
+    def get_duration(self,file):
+        """
+        Return the duration in frames of the video
+        :param file: (string) the video file path
+        :return: (int) frame_number
+        """
+        test = self.ffprobe(file)
+        if test:
+            if test["format"]["nb_streams"] > 0:
+                if test["streams"][0]["codec_type"] == "video":
+                    return int(test["streams"][0]["nb_frames"])
+        else:
+            return False
+
 
 
 if __name__ == '__main__':

@@ -1,12 +1,11 @@
 import os
 
 from fbs_runtime.application_context.PySide2 import ApplicationContext
-from PySide2 import QtWidgets, QtCore, QtWebEngineWidgets
+from PySide2 import QtWidgets, QtCore
 
 import sys
 
-from package import timecode
-from package.videocheck import is_video, Job_File
+from package.videocheck import Job_File
 
 #### DUMMY CODE
 LOREM = "Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia,\n" \
@@ -185,16 +184,18 @@ class Window(QtWidgets.QMainWindow):
         # Choosing video file to analyse
         f = QtWidgets.QFileDialog.getOpenFileUrl(self, "Select Video File")
         path = f[0].toLocalFile()
-        if is_video(path):
+        # update the binaries path
+        job.ffmpeg_path = self.ffmpeg_path
+        job.ffprobe_path = self.ffprobe_path
+
+        if job.is_video(path):
             job.load_video_file(path)
         else:
             error = QtWidgets.QMessageBox()
             error.setText(f"This is not a valid Video File:{path}")
             error.exec_()
             return
-        # update the binaries path
-        job.ffmpeg_path = self.ffmpeg_path
-        job.ffprobe_path = self.ffprobe_path
+
         # append job
         job_list.append(job)
         self.refresh_job_list_widget()
@@ -219,9 +220,9 @@ if __name__ == '__main__':
     appctxt = ApplicationContext()       # 1. Instantiate ApplicationContext
     window = Window()
 
- # ressources : ffprobe and ffmpeg bianries + ui stylesheet
+ # ressources : ffprobe and ffmpeg binaries + ui stylesheet
     window.ffmpeg_path = appctxt.get_resource("ffmpeg")
-    ffprobe_path = appctxt.get_resource("ffprobe")
+    window.ffprobe_path = appctxt.get_resource("ffprobe")
     stylesheet = appctxt.get_resource('SpyBot.qss')
 
 
