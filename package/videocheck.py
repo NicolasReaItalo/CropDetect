@@ -3,11 +3,11 @@ import subprocess as sp
 import numpy
 import time
 import os
-import json
 import datetime
 import pandas as pd
 import pathlib
 
+from package.ffprobe import ffprobe, is_video, get_framerate,get_duration,get_codec,get_resolution
 from package import timecode
 
 
@@ -56,14 +56,14 @@ class Job_File():
 
     def load_video_file(self, path):
         self.video_path = path
-        if not self.is_video(self.video_path):
+        if not is_video(self.video_path,self.ffprobe_path):
            self.video_path = ''
            return False
-        self.end_frame = self.get_duration(self.video_path)
-        self.x_res, self.y_res = self.get_resolution(self.video_path)
-        self.framerate = self.get_framerate(self.video_path)
-        self.end_frame = self.get_duration(self.video_path)
-        self.codec = self.get_codec(self.video_path)
+        self.end_frame = get_duration(self.video_path,self.ffprobe_path)
+        self.x_res, self.y_res = get_resolution(self.video_path,self.ffprobe_path)
+        self.framerate = get_framerate(self.video_path,self.ffprobe_path)
+        self.end_frame = get_duration(self.video_path,self.ffprobe_path)
+        self.codec = get_codec(self.video_path,self.ffprobe_path)
         self.tc_offset = 0
         self.report_path = "."
 
@@ -72,15 +72,11 @@ class Job_File():
 
         #create the report folder
         video_file_folder = pathlib.Path(os.path.dirname(self.video_path))
-        #self.report_path =
         report_folder_name  = self.create_report_folder_name()
         report_path = video_file_folder / report_folder_name
         report_path.mkdir(parents=True, exist_ok=True)
         self.report_path = str(report_path)
 
-
-       # if not is_video(self.video_path):
-        #    return False
         self.issue_list = []
         current_frame = 0
         #        self.start_time = time.clock()
@@ -110,7 +106,7 @@ class Job_File():
             resized = cv2.resize(image, (self.x_res // scale_factor, self.y_res // scale_factor), 1, 1)
 
             self.write_on_image(resized, f'frame:{str(current_frame)}', 0.5, 20, 40)
-            self.write_on_image(resized, f'progress:{(round(current_frame / self.end_frame, 1)) * 100} %', 0.5, 20, 70)
+            self.write_on_image(resized, f'progress:{(round(current_frame / self.end_frame, 2)) * 100} %', 0.5, 20, 70)
             self.write_on_image(resized,
                                 f'Time-Code:{timecode.frame_to_tc_02((current_frame + self.tc_offset), self.framerate)}',
                                 0.5, 20, 100)
@@ -384,92 +380,6 @@ class Job_File():
         report_path = f'{self.report_path}/{file}_report.csv'
         self.df_report.to_csv(report_path)
 
-
-### FFPROBE UTILITY FUNCTIONS
-    def ffprobe(self,video_file):
-        """
-        ffprobe runs the ffprobe binary command onto the selected video file
-        :param video_file: (string) the video file path
-        :return: a dict containing the ffprobe report
-        """
-        path = pathlib.Path(video_file)
-
-        command = f'{self.ffprobe_path} -v quiet -print_format json -show_format -show_streams "{path.__str__()}"'
-        try:
-            proc = sp.check_output(command, shell=True)
-            return json.loads(proc.decode())
-        except sp.CalledProcessError:
-            return False  # There was an error - command exited with non-zero code
-
-    def is_video(self,file):
-        """
-        Check if the input file is a video file
-        :param file: (string) the video file path
-        :return:
-        """
-        test = self.ffprobe(file)
-        if test:
-            return True
-        else:
-            print(test)
-            return False
-
-    def get_codec(self,file):
-        """
-        Return the Codec of the video as a string
-        :param file: (string) the video file path
-        :return: (string) Codec
-        """
-        test = self.ffprobe(file)
-        if test:
-            if test["format"]["nb_streams"] > 0:
-                if test["streams"][0]["codec_type"] == "video":
-                    return test["streams"][0]["codec_long_name"]
-        else:
-            return False
-
-    def get_framerate(self,file):
-        """
-        Return the video file framerate as a float
-        :param file: (string) the video file path
-        :return:(float) framerate
-        """
-        test = self.ffprobe(file)
-        if test:
-            if test["format"]["nb_streams"] > 0:
-                if test["streams"][0]["codec_type"] == "video":
-                    a = test["streams"][0]["time_base"]
-                return int(a.split('/')[1])
-        else:
-            return False
-
-    def get_resolution(self,file):
-        """
-        Return the width and height in pixels of the video file
-        :param file: (string) the video file path
-        :return: (int) width, height
-        """
-        test = self.ffprobe(file)
-        if test:
-            if test["format"]["nb_streams"] > 0:
-                if test["streams"][0]["codec_type"] == "video":
-                    return int(test["streams"][0]["width"]), int(test["streams"][0]["height"])
-        else:
-            return False
-
-    def get_duration(self,file):
-        """
-        Return the duration in frames of the video
-        :param file: (string) the video file path
-        :return: (int) frame_number
-        """
-        test = self.ffprobe(file)
-        if test:
-            if test["format"]["nb_streams"] > 0:
-                if test["streams"][0]["codec_type"] == "video":
-                    return int(test["streams"][0]["nb_frames"])
-        else:
-            return False
 
 
 
