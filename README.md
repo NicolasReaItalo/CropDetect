@@ -8,7 +8,7 @@ in video files.
 
 <hr/>
 
-<p align="center"><img src="screenshot.png" /></p>
+<p align="center"><img src="README_img/screenshot.png" /></p>
 <p> This software's aim is to detect small black bars that can appear during the color grading process. <br>
 It runs on Macos 10.14 and up. It should be possible to run it on Windows and Linux with a
 few code tweaks. Let me know if you're interested
@@ -29,38 +29,110 @@ few code tweaks. Let me know if you're interested
 <a href="#"> MacosX 10.14+ installer DMG </a>
 
 
-<h4> Package from source</h4>
+<h3>Usage</h3>
+  <ol>
+  <li>Add video files to test with the "Add job" button </li>
+  <p align="center"><img src="README_img/add_job.png" /></p>
+  
+  <li>Foreach job you cans specify the report folder location </li>
+  <p align="center"><img src="README_img/choose_report_folder.png" /></p>
+  <li> The start and end frames of th analysis </li>
+ <p align="center"><img src="README_img/skip_analysis.png" /></p>
+  <li> The pixel offsets (to avoid false positive on masters with inner blanking)</li>
+ <p align="center"><img src="README_img/pixel_offset.png" /></p>
+
+<li>Press the start button to begin the analysis on all the job in the queue<li>
+
+<p align="center"><img src="README_img/pixel_offset.png" /> </p>
+
+</ol>
+
+
+Once the analysis is complete, you can open the report folder.
+
+<p align="center"><img src="README_img/report_folder.png" /> </p>
+
+Open the html report to get a summary of the detected issues.
+<p align="center"><img src="README_img/report_html.png" /> </p>
+
+<h3>Use the EDL file in Da Vinci Resolve</h3>
+
+<ol>
+<li>Create a new project</li>
+<li>Import the tested video file</li>
+<li>Create a new project</li>
+<li>Create a new timeline using this clip</li>
+<p align="center"><img src="README_img/new-timeline.png" /> </p>
+<li>The timeline start TC must be set at 00:00:00:00</li>
+<p align="center"><img src="README_img/timeline_tc.png" /> </p>
+<li>Open the timeline and import the EDL as timeline markers</li>
+<p align="center"><img src="README_img/import_marker.png" /> </p>
+<li>The detected issues appear as red markers on the timeline</li>
+<p align="center"><img src="README_img/markers.png" /> </p>
+
+
+
+</ol>
+
+<h4> Build from source</h4>
+
+You must have 3.6 installed on your machine.
+
+In an empty directory execute the following commands :
+
+Start by cloning this repository
+```shell
+git clone https://github.com/NicolasReaItalo/CropDetect.git
+cd CropDetect
+```
+
+Create a virtual environment
+```shell
+python3.6 -m venv env
+source env/bin/activate
+```
+
+Upgrade pip and install the libraries
 
 ```shell
-pip install
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
+
+Lauch the program with :
+```shell
+fbs run
+```
+Or buid the executable with : 
+```shell
+fbs freeze
+```
+Once the executable is built you can create an installer with : 
+```shell
+fbs installer
+```
+
+
 
 <h3>Libraries</h3>
 <ul>
+<li>The version of python used is 3.6</li>
   <li>The video decoding is done using the <a href="https://ffmpeg.org/"> FFMPEG library</a></li>
   <li>The calculation and dispaying are done using <a href="https://opencv.org/"> OPENCV</a> and <a href="https://numpy.org/"> NUMPY</a></li>
   <li>The packaging is done thanks to the <a href="https://github.com/mherrmann/fbs-tutorial">FBS packaging system</a></li>
 <li>The stylesheet is from: <a href="https://github.com/mherrmann/fbs-tutorial">FBS packaging system</a></li>
-
-
 </ul>
 
 
 
 
-<h3>Roadmap</h3>
-Keep it simple. Keep it minimal. Don't put every single feature just because you can.
-
 
 
 <h3>License</h3>
-CropDetect is released undur the GNU
-#CropDetect is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+CropDetect is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
  as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
 CropDetect is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  without even the implied warranty
  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-#You should have received a copy of the GNU General Public License along with Foobar.
- If not, see <https://www.gnu.org/licenses/>
