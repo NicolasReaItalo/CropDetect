@@ -26,7 +26,7 @@ few code tweaks. Let me know if you're interested
 
 <h4> Download installer </h4>
 
-<a href="#"> MacosX 10.14+ installer DMG </a>
+<a href="https://www.dropbox.com/s/5xy6uw68wyex4oi/CropDetect.dmg?dl=0"> MacosX 10.14+ installer DMG </a>
 
 
 <h3>Usage</h3>
