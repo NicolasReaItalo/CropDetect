@@ -229,7 +229,6 @@ class Job_File():
 
             nb_line = cv2.cvtColor(line, cv2.COLOR_BGR2GRAY)
             var_line = numpy.var(nb_line)
-            #print(f"r = {r_max}/ b= {b_max}/ g ={g_max} / var line = {var_line}")
             if var_line <= VAR_TRESHOLD:
                 return True
         return False
