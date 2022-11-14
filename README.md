@@ -145,7 +145,6 @@ The black bars detection is performed by slicing the outermost lines (Up,Left,Ri
   <li>The video decoding is done using the <a href="https://ffmpeg.org/"> FFMPEG library</a></li>
   <li>The calculation and dispaying are done using <a href="https://opencv.org/"> OPENCV</a> and <a href="https://numpy.org/"> NUMPY</a></li>
   <li>The packaging is done thanks to the <a href="https://github.com/mherrmann/fbs-tutorial">FBS packaging system</a></li>
-<li>The stylesheet is from: <a href="https://github.com/mherrmann/fbs-tutorial">FBS packaging system</a></li>
 </ul>
 
 
