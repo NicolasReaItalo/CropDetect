@@ -9,11 +9,10 @@ in video files.
 <hr/>
 
 <p align="center"><img src="README_img/screenshot.png" /></p>
-<p> This software's aim is to detect small black bars that can appear during the color grading process. <br>
+<p> This software's aim is to detect small black bars that can appear during the color grading process.This kind of issue is often caused by resized or tilt during color grading? <br>
 It runs on Macos 10.14 and up. It should be possible to run it on Windows and Linux with a
 few code tweaks. Let me know if you're interested
 </p>
-
 <h3> Features </h3>
 
 <ul>
@@ -22,6 +21,7 @@ few code tweaks. Let me know if you're interested
   <li>Adjustable resolution offsets</li>
 
 </ul>
+
 
 
 <h3> Download & Installation </h3>
