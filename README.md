@@ -2,7 +2,7 @@
 
 <h1 align="center"> CropDetect</h1>
 
-<p align="center"> A program designed to detect blanking issue ( inconsistency of black bars )<br>
+<p align="center"> A program designed to detect 'bad eges', blanking issues ( inconsistency of black bars )<br>
 in video files.
 </p>
 
