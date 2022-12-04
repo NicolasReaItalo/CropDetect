@@ -27,7 +27,7 @@ from package.videocheck import Job_File
 
 
 
-VERSION = "0.9.9"
+VERSION = "1.0"
 
 
 class Window(QtWidgets.QMainWindow):
@@ -204,25 +204,25 @@ class Window(QtWidgets.QMainWindow):
         self.choose_report_widget = QtWidgets.QWidget()
         self.choose_report_widget.setLayout(self.choose_report_layout)
 
-        # skip firsts frames widget elements
+        # skip first frames widget elements
         self.skip_frames_widget = QtWidgets.QWidget()
         self.skip_frames_layout = QtWidgets.QHBoxLayout()
         self.skip_frames_layout.setSpacing(10)
         self.firstframes_skip_edit = QtWidgets.QSpinBox()
         self.firstframes_skip_edit.setRange(0, 999999)
         self.firstframes_skip_edit.setMaximumWidth(80)
-        self.skip_label = QtWidgets.QLabel("Skip analysis on firsts :")
+        self.skip_label = QtWidgets.QLabel("Skip analysis on first :")
         self.skip_label.setMaximumWidth(140)
         self.skip_frames_layout.addWidget(self.skip_label)
         self.skip_frames_layout.addWidget(self.firstframes_skip_edit)
         self.skip_frames_layout.addWidget(QtWidgets.QLabel("frames"))
         self.skip_frames_widget.setLayout(self.skip_frames_layout)
 
-        # skip lasts frames widget elements
+        # skip last frames widget elements
         self.lastframes_skip_edit = QtWidgets.QSpinBox()
         self.lastframes_skip_edit.setRange(0, 999999)
         self.lastframes_skip_edit.setMaximumWidth(80)
-        self.skip_label = QtWidgets.QLabel("And on lasts :")
+        self.skip_label = QtWidgets.QLabel("And on last :")
         self.skip_label.setMaximumWidth(140)
         self.skip_frames_layout.addWidget(self.skip_label)
         self.skip_frames_layout.addWidget(self.lastframes_skip_edit)

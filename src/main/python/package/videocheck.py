@@ -28,8 +28,8 @@ from package.ffprobe import is_video, get_framerate, get_duration, get_codec, ge
 from package import timecode
 
 
-LUMA_TRESHOLD = 20  # these thresholds are a bit empirical, found these sweet spots with trial and error
-VAR_TRESHOLD = 1.5
+LUMA_TRESHOLD = 25  # these thresholds are a bit empirical, found these sweet spots with trial and error
+VAR_TRESHOLD = 15
 
 
 
