@@ -26,14 +26,13 @@ few code tweaks. Let me know if you're interested
 
 <h3> Download & Installation </h3>
 
-<h4> Download installer </h4>
+<h4> Download installer (Macos 10.14+) </h4>
 
-<a href="https://www.dropbox.com/s/5xy6uw68wyex4oi/CropDetect.dmg?dl=0"> MacosX 10.14+ installer DMG </a>
-
-
+<p>The installer can be found in the <a href="https://github.com/NicolasReaItalo/CropDetect/releases">Release </a>a section or through this
+<a href="https://www.dropbox.com/s/5xy6uw68wyex4oi/CropDetect.dmg?dl=0"> alternative link </a></p>
 <h4> Build from source</h4>
 
-You must have 3.6 installed on your machine.
+You must have Python 3.6 installed on your system.
 
 In an empty directory execute the following commands :
 
