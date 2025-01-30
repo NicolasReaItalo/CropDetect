@@ -33,7 +33,7 @@ few code tweaks. Let me know if you're interested
 
 <h4> Build from source</h4>
 
-You must have 3.6 installed on your machine.
+You must have python 3.6 installed on your machine.
 
 In an empty directory execute the following commands :
 
