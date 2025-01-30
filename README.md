@@ -102,7 +102,6 @@ Open the html report to get a summary of the detected issues.
 <ol>
 <li>Create a new project</li>
 <li>Import the tested video file</li>
-<li>Create a new project</li>
 <li>Create a new timeline using this clip</li>
 <p align="center"><img src="README_img/new-timeline.png" /> </p>
 <li>The timeline start TC must be set at 00:00:00:00</li>
